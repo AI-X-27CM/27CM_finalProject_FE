@@ -5,92 +5,81 @@ import Header from './Header';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import validator from 'validator';
 import CryptoJS from 'crypto-js';
+import axios from 'axios';
 
 const SignUpPage = ({ navigation }) => {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [passwordConfirm, setPasswordConfirm] = useState('');
-  const [nickname, setNickname] = useState('');
   const [phoneNumber, setPhoneNumber] = useState('');
-  const [users, setUsers] = useState({});
 
-  useEffect(() => {
-    loadUsers();
-  }, []);
-
-  const loadUsers = async () => {
-    try {
-      const d = await AsyncStorage.getItem('@users');
-      setUsers(JSON.parse(d));
-    } catch (e) {
-      console.log(e);
-    }
-  };
+  const addUserUrl = 'http://192.168.0.194:8000/addUser'; // 서버 주소
 
   const handleSignUp = async () => {
-    getUKey = Object.keys(users);
     // 유효성 검사
 
-    if (!email || !password || !passwordConfirm || !nickname || !phoneNumber) {
-      alert('필수 항목을 모두 입력해주세요.');
-      return;
-    }
+    // if (!email || !password || !passwordConfirm || !phoneNumber) {
+    //   alert('필수 항목을 모두 입력해주세요.');
+    //   return;
+    // }
 
-    if (!validator.isEmail(email)) {
-      alert('이메일 주소 형식이 올바르지 않습니다.');
-      return;
-    }
+    // if (!validator.isEmail(email)) {
+    //   alert('이메일 주소 형식이 올바르지 않습니다.');
+    //   return;
+    // }
 
-    if (password.length < 8) {
-      alert('비밀번호는 최소 8자 이상이어야 합니다.');
-      setPassword('');
-      setPasswordConfirm('');
-      return;
-    }
+    // if (password.length < 8) {
+    //   alert('비밀번호는 최소 8자 이상이어야 합니다.');
+    //   setPassword('');
+    //   setPasswordConfirm('');
+    //   return;
+    // }
 
-    if (password !== passwordConfirm) {
-      alert('비밀번호 확인이 일치하지 않습니다.');
-      setPassword('');
-      setPasswordConfirm('');
-      return;
-    }
-    if (phoneNumber.length > 11) {
-      alert('- 를 제외한 번호를 적어주세요');
-      setPhoneNumber('');
-      return;
-    }
+    // if (password !== passwordConfirm) {
+    //   alert('비밀번호 확인이 일치하지 않습니다.');
+    //   setPassword('');
+    //   setPasswordConfirm('');
+    //   return;
+    // }
+    // if (phoneNumber.length > 11) {
+    //   alert('- 를 제외한 번호를 적어주세요');
+    //   setPhoneNumber('');
+    //   return;
+    // }
 
     // 비밀번호 hash화
 
-    if (Object.keys(users).some((user) => user === email)) {
-      alert('회원의 이메일이 존재합니다.');
-      setEmail('');
-      return;
-    }
+    // if (Object.keys(users).some((user) => user === email)) {
+    //   alert('회원의 이메일이 존재합니다.');
+    //   setEmail('');
+    //   return;
+    // }
 
     const hashedPassword = CryptoJS.SHA256(password).toString();
 
-    const saveUser = async (data) => {
+    const saveUser = async () => {
       try {
-        const userData = JSON.stringify(data);
-        await AsyncStorage.setItem('@users', userData);
+        // const userData = JSON.stringify(data);
+        const response = await axios.post(addUserUrl, newUser, {
+          headers: { 'Content-Type': 'application/json' },
+        });
+        console.log('File uploaded successfully', response.data);
+        alert('회원가입이 완료되었습니다.');
       } catch (e) {
         console.log(e);
       }
     };
-    alert('회원가입이 완료되었습니다.');
 
+    let now = new Date();
+    let kortime = new Date(now.getTime() + 9 * 60 * 60 * 1000);
+    
     const newUser = {
-      ...users,
-      [email]: {
-        id: email,
-        pwd: hashedPassword,
-        nickname: nickname,
-        phone: phoneNumber,
-        date: Date.now(),
-      },
+      id: email,
+      pwd: hashedPassword,
+      phone: phoneNumber,
+      date: kortime
     };
-    setUsers(newUser);
+
     await saveUser(newUser);
     navigation.navigate('Login');
   };
@@ -123,12 +112,6 @@ const SignUpPage = ({ navigation }) => {
           value={passwordConfirm}
           style={styles.inputContainer}
           keyboardType="default"
-        />
-        <TextInput
-          placeholder="닉네임"
-          onChangeText={setNickname}
-          value={nickname}
-          style={styles.inputContainer}
         />
         <TextInput
           placeholder="전화번호"
