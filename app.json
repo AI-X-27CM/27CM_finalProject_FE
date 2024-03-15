@@ -4,6 +4,7 @@
     "slug": "FE_finalProject",
     "version": "1.0.0",
     "orientation": "portrait",
+    "owner":"27cm",
     "icon": "./assets/icon.png",
     "userInterfaceStyle": "light",
     "splash": {
