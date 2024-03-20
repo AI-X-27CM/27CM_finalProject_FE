@@ -1,27 +1,19 @@
-import React, { useEffect, useState } from 'react';
-import { StyleSheet, View, Text, TextInput, Button } from 'react-native';
+import React, { useState } from 'react';
+import { StyleSheet, View, Text, TextInput } from 'react-native';
 import { Input, Button as RNEButton } from 'react-native-elements';
 import Header from './Header';
 import validator from 'validator';
-import AsyncStorage from '@react-native-async-storage/async-storage';
+import error from '../component/error';
+import axios from 'axios';
+import CryptoJS from 'crypto-js';
+
+const url = 'http://192.168.0.165:8000/login';
 
 const LoginPage = ({ navigation }) => {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
 
-  useEffect(() => {
-    loadUsers();
-  }, []);
-
-  const loadUsers = async () => {
-    try {
-      const result = JSON.parse(await AsyncStorage.getItem('@users'));
-      return result;
-    } catch (e) {
-      console.log(e);
-    }
-  };
-  const handleLogin = () => {
+  const handleLogin = async () => {
     if (!email || !password) {
       alert('필수 항목을 모두 입력해주세요.');
       return;
@@ -30,6 +22,28 @@ const LoginPage = ({ navigation }) => {
     if (!validator.isEmail(email)) {
       alert('이메일 주소 형식이 올바르지 않습니다.');
       return;
+    }
+    try {
+      const user = {
+        id: email,
+        pwd: CryptoJS.SHA256(password).toString(),
+      };
+      const response = await axios.post(url, user, {
+        headers: { 'Content-Type': 'application/json' },
+      });
+      console.log('File uploaded successfully', typeof response.data);
+
+      if (typeof response.data === 'number') {
+        navigation.navigate('Main', { responseData: response.data });
+      }
+      if (typeof response.data === 'string') {
+        alert('회원번호를 확인해주세요');
+        setEmail('');
+        setPassword('');
+        return;
+      }
+    } catch (e) {
+      error(e);
     }
   };
 
@@ -53,7 +67,8 @@ const LoginPage = ({ navigation }) => {
         />
         <RNEButton
           title="로그인"
-          onPress={() => navigation.navigate('Main')}
+          // onPress={() => navigation.navigate('Main')}
+          onPress={() => handleLogin()}
           buttonStyle={styles.loginButton}
         />
         <RNEButton

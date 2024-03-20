@@ -13,71 +13,65 @@ const SignUpPage = ({ navigation }) => {
   const [passwordConfirm, setPasswordConfirm] = useState('');
   const [phoneNumber, setPhoneNumber] = useState('');
 
-  const addUserUrl = 'http://192.168.0.194:8000/addUser'; // 서버 주소
+  const addUserUrl = 'http://192.168.0.165:8000/addUser'; // 서버 주소
 
   const handleSignUp = async () => {
     // 유효성 검사
 
-    // if (!email || !password || !passwordConfirm || !phoneNumber) {
-    //   alert('필수 항목을 모두 입력해주세요.');
-    //   return;
-    // }
+    if (!email || !password || !passwordConfirm || !phoneNumber) {
+      alert('필수 항목을 모두 입력해주세요.');
+      return;
+    }
 
-    // if (!validator.isEmail(email)) {
-    //   alert('이메일 주소 형식이 올바르지 않습니다.');
-    //   return;
-    // }
+    if (!validator.isEmail(email)) {
+      alert('이메일 주소 형식이 올바르지 않습니다.');
+      return;
+    }
 
-    // if (password.length < 8) {
-    //   alert('비밀번호는 최소 8자 이상이어야 합니다.');
-    //   setPassword('');
-    //   setPasswordConfirm('');
-    //   return;
-    // }
+    if (password.length < 8) {
+      alert('비밀번호는 최소 8자 이상이어야 합니다.');
+      setPassword('');
+      setPasswordConfirm('');
+      return;
+    }
 
-    // if (password !== passwordConfirm) {
-    //   alert('비밀번호 확인이 일치하지 않습니다.');
-    //   setPassword('');
-    //   setPasswordConfirm('');
-    //   return;
-    // }
-    // if (phoneNumber.length > 11) {
-    //   alert('- 를 제외한 번호를 적어주세요');
-    //   setPhoneNumber('');
-    //   return;
-    // }
+    if (password !== passwordConfirm) {
+      alert('비밀번호 확인이 일치하지 않습니다.');
+      setPassword('');
+      setPasswordConfirm('');
+      return;
+    }
+    if (phoneNumber.length > 11) {
+      alert('- 를 제외한 번호를 적어주세요');
+      setPhoneNumber('');
+      return;
+    }
 
     // 비밀번호 hash화
-
-    // if (Object.keys(users).some((user) => user === email)) {
-    //   alert('회원의 이메일이 존재합니다.');
-    //   setEmail('');
-    //   return;
-    // }
 
     const hashedPassword = CryptoJS.SHA256(password).toString();
 
     const saveUser = async () => {
       try {
-        // const userData = JSON.stringify(data);
         const response = await axios.post(addUserUrl, newUser, {
           headers: { 'Content-Type': 'application/json' },
         });
         console.log('File uploaded successfully', response.data);
         alert('회원가입이 완료되었습니다.');
       } catch (e) {
+        error(e);
         console.log(e);
       }
     };
 
     let now = new Date();
     let kortime = new Date(now.getTime() + 9 * 60 * 60 * 1000);
-    
+
     const newUser = {
       id: email,
       pwd: hashedPassword,
       phone: phoneNumber,
-      date: kortime
+      date: kortime,
     };
 
     await saveUser(newUser);
