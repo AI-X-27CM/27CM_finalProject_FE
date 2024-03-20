@@ -1,34 +1,29 @@
-import {
-  StyleSheet,
-  Text,
-  View,
-  Image,
-  Button,
-  TouchableOpacity,
-} from 'react-native';
-import Header from './Header';
-import { useState, useEffect } from 'react';
+import React, { useState, useEffect } from 'react';
+import { StyleSheet, Text, View, Image, TouchableOpacity } from 'react-native';
 import { Audio } from 'expo-av';
 import axios from 'axios';
+import Header from './Header';
+import { error } from '../component/error';
 
-const Main = () => {
+const Main = ({ route }) => {
   const [isRecording, setIsRecording] = useState(false);
   const [recording, setRecording] = useState();
-  const [permissionResponse, requestPermission] = Audio.usePermissions();
-  const [uri, setUri] = useState('');
   const [intervalId, setIntervalId] = useState(null);
+  const [permissionResponse, requestPermission] = Audio.usePermissions();
+  const userNo = route.params.responseData;
 
-  const url = 'http://192.168.0.194:8000/api';
-
+  const url = 'http://192.168.0.165:8000/api';
+  const startUrl = `http://192.168.0.165:8000/start/${userNo}`;
   const Detecting = async () => {
     try {
+      const response = await axios.get(startUrl);
+      console.log('Detecting...');
       setIsRecording(true);
-      // 권한 확인
+
       if (permissionResponse.status !== 'granted') {
-        console.log('Requesting permission..');
         await requestPermission();
       }
-      // 권한 요청 및 오디오 모드 설정
+
       await Audio.requestPermissionsAsync();
       await Audio.setAudioModeAsync({
         allowsRecordingIOS: true,
@@ -38,21 +33,24 @@ const Main = () => {
       if (recording) {
         await recording.stopAndUnloadAsync();
       }
-      console.log('Starting recording..');
-      const { recording } = await Audio.Recording.createAsync(
+
+      console.log('Starting recording...');
+      const { recording: newRecording } = await Audio.Recording.createAsync(
         Audio.RecordingOptionsPresets.HIGH_QUALITY,
       );
-      setRecording(recording);
 
-      if (recording) {
+      setRecording(newRecording);
+
+      if (newRecording) {
         const newIntervalId = setInterval(async () => {
-          await sendRecording(recording); //stop
+          await sendRecording(newRecording);
           clearInterval(newIntervalId);
           Detecting();
         }, 10000);
         setIntervalId(newIntervalId);
       }
     } catch (e) {
+      error(e);
       console.log(e);
     }
   };
@@ -63,45 +61,38 @@ const Main = () => {
         if (!recording._isDoneRecording) {
           await recording.stopAndUnloadAsync();
         }
+
         await Audio.setAudioModeAsync({
           allowsRecordingIOS: false,
         });
-        const uri = await recording.getURI();
 
+        const uri = await recording.getURI();
         console.log('Recording stopped and stored at', uri);
 
         const formData = new FormData();
-
         formData.append('file', {
           uri: uri,
           name: 'recording.m4a',
           type: 'audio/m4a',
         });
+        formData.append('userNo', userNo);
 
-        try {
-          const response = await axios({
-            method: 'post',
-            url: url, // 여기서 URL은 FastAPI 서버의 엔드포인트입니다.
-            data: formData,
-            headers: { 'Content-Type': 'multipart/form-data' },
-          });
-          console.log('File uploaded successfully', response.data);
-        } catch (e) {
-          console.log(e);
-        }
+        const response = await axios.post(url, formData, {
+          headers: { 'Content-Type': 'multipart/form-data' },
+        });
 
-        setRecording(undefined);
-        console.log('Stopping recording..');
+        console.log('File uploaded successfully', response.data);
       } catch (e) {
+        error(e);
         console.log(e);
       }
     }
   };
 
   const stopRecording = () => {
-    setIsRecording(false); // 녹음 중지
+    setIsRecording(false);
     if (intervalId) {
-      clearInterval(intervalId); // 인터벌 멈춤
+      clearInterval(intervalId);
       setIntervalId(null);
       sendRecording(recording);
     }
@@ -111,100 +102,71 @@ const Main = () => {
     <View style={styles.container}>
       <Header />
       {isRecording ? (
-        <>
-          <View style={styles.title}>
-            <Text style={styles.titleFont}>보이스피싱 탐지중</Text>
-          </View>
-          <View style={styles.middle}>
-            <Text style={styles.percentage}>10%</Text>
-            <Text style={styles.alert}>보이스 피싱일 확률이 적습니다.</Text>
-          </View>
-          <View style={styles.main}>
-            <TouchableOpacity onPress={() => stopRecording()}>
-              <Image
-                source={require('../image/mainPage/Group 19.png')}
-                style={styles.mainImage}
-              />
-            </TouchableOpacity>
-          </View>
-        </>
+        <View style={styles.recordingContainer}>
+          <Text style={styles.recordingTitle}>보이스피싱 탐지 중</Text>
+          <Text style={styles.percentage}>10%</Text>
+          <Text style={styles.alert}>보이스 피싱일 확률이 적습니다.</Text>
+          <TouchableOpacity onPress={stopRecording}>
+            <Image
+              source={require('../image/mainPage/Group 19.png')}
+              style={styles.mainImage}
+            />
+          </TouchableOpacity>
+        </View>
       ) : (
-        <>
-          <View style={styles.title}>
-            <Text style={styles.titleFont}>보이스피싱 App입니다.</Text>
-          </View>
-          <View style={styles.middle}>
-            <Text style={styles.alert}>이미지를 Click 하세요</Text>
-          </View>
-          <View style={styles.main}>
-            <TouchableOpacity onPress={() => Detecting()}>
-              <Image
-                source={require('../image/mainPage/Group 19.png')}
-                style={styles.mainImage}
-              />
-            </TouchableOpacity>
-          </View>
-        </>
+        <View style={styles.nonRecordingContainer}>
+          <Text style={styles.title}>보이스피싱 App입니다.</Text>
+          <Text style={styles.alert}>이미지를 클릭하세요.</Text>
+          <TouchableOpacity onPress={Detecting}>
+            <Image
+              source={require('../image/mainPage/Group 19.png')}
+              style={styles.mainImage}
+            />
+          </TouchableOpacity>
+        </View>
       )}
     </View>
   );
 };
 
 const styles = StyleSheet.create({
-  main: {
-    flex: 1,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  mainImage: {
-    width: 400,
-    height: 400,
-    margin: 'auto',
-    top: 0,
-    bottom: 0,
-    left: 0,
-    right: 0,
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  middle: {
-    justifyContent: 'center',
-    alignItems: 'center',
-    marginTop: 30,
-  },
-  percentage: { color: 'white', fontSize: 48 },
-  alert: { color: 'white', fontSize: 20 },
   container: {
     flex: 1,
     backgroundColor: '#222222',
   },
-  logo: {
-    width: 98,
-    height: 98,
-    margin: 'auto',
-    top: 0,
-    bottom: 0,
-    left: 0,
-    right: 0,
+  recordingContainer: {
+    flex: 1,
     justifyContent: 'center',
     alignItems: 'center',
   },
-  header: {
-    justifyContent: 'space-between',
-    flexDirection: 'row',
-    marginTop: 10,
+  nonRecordingContainer: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
   },
-  titleFont: {
+  recordingTitle: {
     color: 'white',
-    backgroundColor: '#222222',
+    fontSize: 24,
+    marginBottom: 20,
+  },
+  percentage: {
+    color: 'white',
     fontSize: 48,
-    fontWeight: 'bold',
+  },
+  alert: {
+    color: 'white',
+    fontSize: 20,
+    marginBottom: 20,
+  },
+  mainImage: {
+    width: 400,
+    height: 400,
+    marginBottom: 20,
   },
   title: {
-    backgroundColor: '#222222',
-    justifyContent: 'center',
-    alignItems: 'center',
-    marginTop: 48,
+    color: 'white',
+    fontSize: 24,
+    marginBottom: 20,
   },
 });
 

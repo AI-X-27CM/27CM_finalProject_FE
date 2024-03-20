@@ -78,6 +78,6 @@ const styles = StyleSheet.create({
     backgroundColor: '#222222',
   },
   headerFont: {
-    coloer: '#fff',
+    color: '#fff',
   },
 });
