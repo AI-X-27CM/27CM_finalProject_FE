@@ -14,15 +14,15 @@ const LoginPage = ({ navigation }) => {
   const [password, setPassword] = useState('');
 
   const handleLogin = async () => {
-    if (!email || !password) {
-      alert('필수 항목을 모두 입력해주세요.');
-      return;
-    }
+    // if (!email || !password) {
+    //   alert('필수 항목을 모두 입력해주세요.');
+    //   return;
+    // }
 
-    if (!validator.isEmail(email)) {
-      alert('이메일 주소 형식이 올바르지 않습니다.');
-      return;
-    }
+    // if (!validator.isEmail(email)) {
+    //   alert('이메일 주소 형식이 올바르지 않습니다.');
+    //   return;
+    // }
     try {
       const user = {
         id: email,
@@ -31,7 +31,6 @@ const LoginPage = ({ navigation }) => {
       const response = await axios.post(url, user, {
         headers: { 'Content-Type': 'application/json' },
       });
-      console.log('File uploaded successfully', typeof response.data);
 
       if (typeof response.data === 'number') {
         navigation.navigate('Main', { responseData: response.data });
