@@ -11,6 +11,8 @@ import { useState } from 'react';
 import { Audio } from 'expo-av';
 import axios from 'axios';
 import error from '../component/error';
+import Main_FakeV from './Main_FakeV';
+import API_ENDPOINTS from '../config/apiConfig';
 
 const Main = ({ route }) => {
   const [isRecording, setIsRecording] = useState(false);
@@ -19,14 +21,13 @@ const Main = ({ route }) => {
   const [intervalId, setIntervalId] = useState(null);
   const [label, setLabel] = useState('None');
   const [gpt, setGpt] = useState(0);
+  const [fake, setFake] = useState(0);
 
   const userNo = route.params.responseData;
 
-  const url = 'http://192.168.0.165:8000/api';
-  const gptUrl = 'http://192.168.0.165:8000/gpt';
-  const startUrl = `http://192.168.0.165:8000/start/${userNo}`;
-  const endUrl = `http://192.168.0.165:8000/end/${userNo}/${label}/${gpt}`;
-  const Detecting = async () => {
+  const startUrl = `${API_ENDPOINTS.SRT_RECORD}/${userNo}`;
+  const endUrl = `${API_ENDPOINTS.END_RECORD}/${userNo}/${label}/${gpt}`;
+  const detecting = async () => {
     try {
       console.log('Detecting상훈');
       await axios.get(startUrl);
@@ -56,9 +57,12 @@ const Main = ({ route }) => {
         const newIntervalId = setInterval(async () => {
           await sendRecording(recording); //stop
           clearInterval(newIntervalId);
-          Detecting();
+          detecting();
         }, 10000);
         setIntervalId(newIntervalId);
+      } else {
+        clearInterval(intervalId);
+        setIsRecording(false);
       }
     } catch (e) {
       error(e);
@@ -90,15 +94,16 @@ const Main = ({ route }) => {
         formData.append('userNo', userNo);
 
         await axios
-          .post(url, formData, {
+          .post(API_ENDPOINTS.RECORD, formData, {
             headers: { 'Content-Type': 'multipart/form-data' },
           })
           .then(async (data) => {
-            const text = data.data;
+            setFake(data.data.synthesis);
+            const text = data.data.combined_text;
             const textData = {
               whisper: text,
             };
-            const res = await axios.post(gptUrl, textData, {
+            const res = await axios.post(API_ENDPOINTS.MODEL_GPT, textData, {
               headers: { 'Content-Type': 'application/json' },
             });
             setLabel(res.data.label);
@@ -121,13 +126,14 @@ const Main = ({ route }) => {
         await axios.get(endUrl).then(() => {
           setGpt(0);
           setLabel('None');
+          setIsRecording(false); // 녹음 중지
         });
         console.log('End URL request completed');
       } catch (e) {
         error(e);
         console.log(e);
       }
-    }, 3000);
+    }, 5000);
     setIsRecording(false); // 녹음 중지
     if (intervalId) {
       clearInterval(intervalId); // 인터벌 멈춤
@@ -135,7 +141,7 @@ const Main = ({ route }) => {
       sendRecording(recording);
     }
     setRecording('');
-    return;
+    setFake(0);
   };
 
   return (
@@ -147,21 +153,30 @@ const Main = ({ route }) => {
             <Text style={styles.titleFont}>보이스피싱 탐지중</Text>
           </View>
 
-          {gpt === 1 ? (
+          {gpt === 2 ? (
             <View style={styles.middle}>
               <Text style={styles.alert}>보이스 피싱이 의심됩니다.</Text>
+            </View>
+          ) : gpt === 1 ? (
+            <View style={styles.middle}>
+              <Text style={styles.alert}>보이스 피싱일 확률이 적습니다.</Text>
             </View>
           ) : (
             <View style={styles.middle}>
               <Text style={styles.alert}>보이스 피싱일 확률이 적습니다.</Text>
             </View>
           )}
-
+          <Main_FakeV data={fake} />
           <View style={styles.main}>
             <TouchableOpacity onPress={() => stopRecording()}>
-              {gpt === 1 ? (
+              {gpt === 2 ? (
                 <Image
                   source={require('../image/mainPage/Group 21.png')}
+                  style={styles.mainImage}
+                />
+              ) : gpt === 1 ? (
+                <Image
+                  source={require('../image/mainPage/Group 20.png')}
                   style={styles.mainImage}
                 />
               ) : (
@@ -181,8 +196,10 @@ const Main = ({ route }) => {
           <View style={styles.middle}>
             <Text style={styles.alert}>이미지를 Click 하세요</Text>
           </View>
+          <Main_FakeV data={fake} />
+
           <View style={styles.main}>
-            <TouchableOpacity onPress={() => Detecting()}>
+            <TouchableOpacity onPress={() => detecting()}>
               <Image
                 source={require('../image/mainPage/Group 19.png')}
                 style={styles.mainImage}
@@ -248,7 +265,7 @@ const styles = StyleSheet.create({
     backgroundColor: '#222222',
     justifyContent: 'center',
     alignItems: 'center',
-    marginTop: 48,
+    marginTop: 28,
   },
 });
 export default Main;

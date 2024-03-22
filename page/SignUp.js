@@ -6,14 +6,12 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 import validator from 'validator';
 import CryptoJS from 'crypto-js';
 import axios from 'axios';
-
+import API_ENDPOINTS from '../config/apiConfig';
 const SignUpPage = ({ navigation }) => {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [passwordConfirm, setPasswordConfirm] = useState('');
   const [phoneNumber, setPhoneNumber] = useState('');
-
-  const addUserUrl = 'http://192.168.0.165:8000/addUser'; // 서버 주소
 
   const handleSignUp = async () => {
     // 유효성 검사
@@ -53,7 +51,7 @@ const SignUpPage = ({ navigation }) => {
 
     const saveUser = async () => {
       try {
-        const response = await axios.post(addUserUrl, newUser, {
+        const response = await axios.post(API_ENDPOINTS.ADD_USER, newUser, {
           headers: { 'Content-Type': 'application/json' },
         });
         console.log('File uploaded successfully', response.data);
