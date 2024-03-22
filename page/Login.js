@@ -6,8 +6,7 @@ import validator from 'validator';
 import error from '../component/error';
 import axios from 'axios';
 import CryptoJS from 'crypto-js';
-
-const url = 'http://192.168.0.165:8000/login';
+import API_ENDPOINTS from '../config/apiConfig';
 
 const LoginPage = ({ navigation }) => {
   const [email, setEmail] = useState('');
@@ -28,7 +27,7 @@ const LoginPage = ({ navigation }) => {
         id: email,
         pwd: CryptoJS.SHA256(password).toString(),
       };
-      const response = await axios.post(url, user, {
+      const response = await axios.post(API_ENDPOINTS.LOGIN, user, {
         headers: { 'Content-Type': 'application/json' },
       });
 
@@ -66,7 +65,6 @@ const LoginPage = ({ navigation }) => {
         />
         <RNEButton
           title="로그인"
-          // onPress={() => navigation.navigate('Main')}
           onPress={() => handleLogin()}
           buttonStyle={styles.loginButton}
         />
