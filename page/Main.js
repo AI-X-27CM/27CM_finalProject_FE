@@ -29,7 +29,6 @@ const Main = ({ route }) => {
   const endUrl = `${API_ENDPOINTS.END_RECORD}/${userNo}/${label}/${gpt}`;
   const detecting = async () => {
     try {
-      console.log('Detecting상훈');
       await axios.get(startUrl);
 
       setIsRecording(true);
@@ -73,7 +72,6 @@ const Main = ({ route }) => {
   const sendRecording = async (recording) => {
     if (recording) {
       try {
-        console.log('sendRecording상훈');
         if (!recording._isDoneRecording) {
           await recording.stopAndUnloadAsync();
         }
@@ -83,7 +81,6 @@ const Main = ({ route }) => {
         });
 
         const uri = await recording.getURI();
-        console.log('Recording stopped and stored at', uri);
 
         const formData = new FormData();
         formData.append('file', {
@@ -120,7 +117,6 @@ const Main = ({ route }) => {
   };
 
   const stopRecording = async () => {
-    console.log('녹음 중지 하자');
     setTimeout(async () => {
       try {
         await axios.get(endUrl).then(() => {

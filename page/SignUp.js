@@ -54,7 +54,6 @@ const SignUpPage = ({ navigation }) => {
         const response = await axios.post(API_ENDPOINTS.ADD_USER, newUser, {
           headers: { 'Content-Type': 'application/json' },
         });
-        console.log('File uploaded successfully', response.data);
         alert('회원가입이 완료되었습니다.');
       } catch (e) {
         error(e);
